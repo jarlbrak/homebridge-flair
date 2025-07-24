@@ -2,43 +2,32 @@
   "pluginAlias": "Flair",
   "pluginType": "platform",
   "singular": true,
+  "headerDisplay": "ℹ️ **Authentication**: Get your OAuth 2.0 Client ID and Client Secret from the Flair mobile app Account Settings, or contact partners@flair.co for business use.",
   "schema": {
     "type": "object",
     "properties": {
       "clientId": {
         "title": "Client ID",
         "type": "string",
-        "description": "Client ID obtained from Flair Support",
+        "description": "OAuth 2.0 Client ID from Flair app Account Settings or Flair support",
         "required": true,
         "default": ""
       },
       "clientSecret": {
         "title": "Client Secret",
         "type": "string",
-        "description": "Client Secret obtained from Flair Support",
-        "required": true,
-        "default": ""
-      },
-      "username": {
-        "title": "username",
-        "type": "string",
-        "description": "Username used to access Flair",
-        "required": true,
-        "default": ""
-      },
-      "password": {
-        "title": "password",
-        "type": "string",
-        "description": "Password used to access Flair",
+        "description": "OAuth 2.0 Client Secret from Flair app Account Settings or Flair support",
         "required": true,
         "default": ""
       },
       "pollInterval": {
         "title": "Poll Interval",
         "type": "number",
-        "description": "How often the plugin should poll the Flair API for updates.",
+        "description": "How often the plugin should poll the Flair API for updates (in seconds).",
         "required": true,
-        "default": 60
+        "default": 60,
+        "minimum": 30,
+        "maximum": 600
       },
       "hidePuckSensors": {
         "title": "Hide puck sensors",
@@ -64,6 +53,34 @@
       "hideVentTemperatureSensors": {
         "title": "Hide vent temperature sensors",
         "description": "Hides the Vent Temperature Sensors",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      "hideHvacUnits": {
+        "title": "Hide HVAC units",
+        "description": "Hides HVAC Units (mini-splits) from HomeKit",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      "hideThermostats": {
+        "title": "Hide thermostats",
+        "description": "Hides physical thermostats from HomeKit",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      "hideBridges": {
+        "title": "Hide bridges",
+        "description": "Hides Flair communication bridges from HomeKit",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      "hideRemoteSensors": {
+        "title": "Hide remote sensors",
+        "description": "Hides remote temperature/humidity sensors from HomeKit",
         "type": "boolean",
         "required": false,
         "default": false
@@ -102,5 +119,49 @@
         ]
       }
     }
-  }
+  },
+  "form": null,
+  "display": null,
+  "layout": [
+    {
+      "type": "section",
+      "title": "Authentication",
+      "expandable": true,
+      "expanded": true,
+      "items": [
+        {
+          "type": "help",
+          "helpvalue": "<div class='alert alert-info'><b>OAuth 2.0 Authentication:</b> Get your Client ID and Secret from the Flair mobile app Account Settings. Open the app → Account Settings → OAuth 2.0 Client Credentials. For business use, contact partners@flair.co.</div>"
+        },
+        "clientId",
+        "clientSecret"
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Plugin Settings",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "pollInterval",
+        "ventAccessoryType"
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Device Visibility",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "hidePuckSensors",
+        "hidePuckRooms",
+        "hidePrimaryStructure",
+        "hideVentTemperatureSensors",
+        "hideHvacUnits",
+        "hideThermostats",
+        "hideBridges",
+        "hideRemoteSensors"
+      ]
+    }
+  ]
 }

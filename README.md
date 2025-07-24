@@ -1,15 +1,26 @@
 # homebridge-flair
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
-[Flair Smart Vent](https://flair.co/products/vent) plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the Flair API.
+[Flair Smart Home](https://flair.co/) plug-in for [Homebridge](https://github.com/nfarina/homebridge) using the Flair API. Supports the complete Flair ecosystem including smart vents, pucks, HVAC units, thermostats, bridges, and remote sensors.
 
 
 # Installation
 
-<!-- 2. Clone (or pull) this repository from github into the same path Homebridge lives (usually `/usr/local/lib/node_modules`). Note: the code currently on GitHub is in beta, and is newer than the latest published version of this package on `npm` -->
 1. Install homebridge using: `npm install -g homebridge`
 2. Install this plug-in using: `npm install -g homebridge-flair`
 3. Update your configuration file. See example `config.json` snippet below.
+
+## Requirements
+
+- **Node.js**: ^18.17.0 || ^20.0.0 || ^22.0.0
+- **Homebridge**: ^1.6.0 || ^2.0.0-beta.0
+- **flair-api-ts**: ^2.0.0 (OAuth 2.0 support required)
+
+## Breaking Changes from Previous Versions
+
+- **Authentication**: Username/password authentication has been removed. OAuth 2.0 client credentials are now required.
+- **API**: Updated to use flair-api-ts v2.0.0 with modernized API patterns.
+- **Configuration**: Remove `username` and `password` from your config - only `clientId` and `clientSecret` are needed.
 
 # Configuration
 
@@ -19,25 +30,68 @@ Configuration sample (edit `~/.homebridge/config.json`):
 {
     "platforms": [
         {
-            "clientId": "client_id",
-            "clientSecret": "client_secret",
-            "username": "user",
-            "password": "pass",
+            "clientId": "your_client_id",
+            "clientSecret": "your_client_secret",
             "pollInterval": 60,
             "platform": "Flair",
-            "ventAccessoryType": "windowCovering"
+            "ventAccessoryType": "windowCovering",
+            "hidePuckSensors": true,
+            "hidePuckRooms": false,
+            "hidePrimaryStructure": true,
+            "hideVentTemperatureSensors": false,
+            "hideHvacUnits": false,
+            "hideThermostats": true,
+            "hideBridges": true,
+            "hideRemoteSensors": false
         }
     ]
 }
 ```
 
+## Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `clientId` | string | **required** | OAuth 2.0 Client ID from Flair app |
+| `clientSecret` | string | **required** | OAuth 2.0 Client Secret from Flair app |
+| `pollInterval` | number | 60 | How often to poll the Flair API (in seconds, min: 30, max: 600) |
+| `ventAccessoryType` | string | "windowCovering" | How vents appear in HomeKit: "windowCovering", "fan", "airPurifier", or "hidden" |
+| `hidePuckSensors` | boolean | true | Hide individual puck temperature/humidity sensors |
+| `hidePuckRooms` | boolean | false | Hide room thermostats (puck rooms) |
+| `hidePrimaryStructure` | boolean | true | Hide the primary structure thermostat |
+| `hideVentTemperatureSensors` | boolean | false | Hide vent temperature sensors |
+| `hideHvacUnits` | boolean | false | Hide HVAC units (mini-splits) |
+| `hideThermostats` | boolean | true | Hide physical thermostats |
+| `hideBridges` | boolean | true | Hide Flair communication bridges |
+| `hideRemoteSensors` | boolean | false | Hide remote temperature/humidity sensors |
+
 # Obtaining Credentials
 
-In order to use this plugin you will need to obtain a client id and client secret from Flair. 
+This plugin uses **OAuth 2.0 authentication only**. Username/password authentication is no longer supported.
 
-Start by creating a Flair account at [my.flair.co](https://my.flair.co/) (if you haven't already), then use [this web form to request credentials](https://forms.gle/VohiQjWNv9CAP2ASA).
+To get your OAuth 2.0 credentials:
+
+1. Open the Flair mobile app
+2. Go to **Account Settings**
+3. Find **OAuth 2.0 Client Credentials**
+4. Copy your Client ID and Client Secret
+
+For business use or if you need help, contact partners@flair.co.
 
 More [API docs and details](https://flair.co/api)
+
+# Supported Devices
+
+This plugin supports the complete Flair smart home ecosystem:
+
+- **Smart Vents** - Control airflow with adjustable dampers
+- **Pucks** - Room sensors with temperature, humidity, and pressure readings
+- **Room Thermostats** - Virtual thermostats based on puck data
+- **HVAC Units** - Mini-split and other HVAC system integration
+- **Physical Thermostats** - Traditional wall thermostats
+- **Communication Bridges** - Flair system communication hubs
+- **Remote Sensors** - Additional temperature and humidity sensors
+- **Primary Structure** - Whole-home thermostat control
 
 # Auto Vs Manual Mode
 

@@ -59,7 +59,7 @@ export class FlairPuckPlatformAccessory {
 
   async getNewPuckReadings(): Promise<Puck> {
     try {
-      const puck = await this.client.getPuckReading(this.puck);
+      const puck = await this.client.get('pucks', this.puck.id) as Puck;
       this.updatePuckReadingsFromPuck(puck);
       return puck;
     } catch (e) {

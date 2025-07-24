@@ -1,10 +1,4 @@
-import type {PlatformAccessory, Service} from 'homebridge';
-import {
-  CharacteristicEventTypes,
-  CharacteristicGetCallback,
-  CharacteristicSetCallback,
-  CharacteristicValue,
-} from 'homebridge';
+import type {PlatformAccessory, Service, CharacteristicValue} from 'homebridge';
 
 import {FlairPlatform} from './platform';
 import {Room, Structure, StructureHeatCoolMode, Client} from 'flair-api-ts';
@@ -58,11 +52,11 @@ export class FlairRoomPlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, this.room.currentHumidity!);
 
     this.thermostatService.getCharacteristic(this.platform.Characteristic.TargetTemperature)
-      .on(CharacteristicEventTypes.SET, this.setTargetTemperature.bind(this))
-      .on(CharacteristicEventTypes.GET, this.getTargetTemperature.bind(this));
+      .onSet(this.setTargetTemperature.bind(this))
+      .onGet(this.getTargetTemperature.bind(this));
 
     this.thermostatService.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
-      .on(CharacteristicEventTypes.SET, this.setTargetHeatingCoolingState.bind(this));
+      .onSet(this.setTargetHeatingCoolingState.bind(this));
 
     setInterval(async () => {
       await this.getNewRoomReadings();
@@ -70,32 +64,28 @@ export class FlairRoomPlatformAccessory {
     this.getNewRoomReadings();
   }
 
-  setTargetHeatingCoolingState(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+  async setTargetHeatingCoolingState(value: CharacteristicValue): Promise<void> {
     if (value === this.platform.Characteristic.TargetHeatingCoolingState.OFF) {
-      this.client.setRoomAway(this.room, true).then((room: Room) => {
-        this.updateRoomReadingsFromRoom(room);
-        this.platform.log.debug('Set Room to away', value);
-        // you must call the callback function
-        callback(null);
+      const room = await this.client.update('rooms', this.room.id, {
+        away: true,
       });
+      this.updateRoomReadingsFromRoom(room);
+      this.platform.log.debug('Set Room to away', value);
     } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.COOL) {
       this.setRoomActive();
-      this.platform.setStructureMode(StructureHeatCoolMode.COOL).then((structure: Structure) => {
-        callback(null);
-        this.updateFromStructure(structure);
-      });
+      const structure = await this.platform.setStructureMode(StructureHeatCoolMode.COOL);
+      this.updateFromStructure(structure);
+      this.platform.log.debug('Set Structure to Cool', value);
     } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.HEAT) {
       this.setRoomActive();
-      this.platform.setStructureMode(StructureHeatCoolMode.HEAT).then((structure: Structure) => {
-        callback(null);
-        this.updateFromStructure(structure);
-      });
+      const structure = await this.platform.setStructureMode(StructureHeatCoolMode.HEAT);
+      this.updateFromStructure(structure);
+      this.platform.log.debug('Set Structure to Heat', value);
     } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.AUTO) {
       this.setRoomActive();
-      this.platform.setStructureMode(StructureHeatCoolMode.AUTO).then((structure: Structure) => {
-        callback(null);
-        this.updateFromStructure(structure);
-      });
+      const structure = await this.platform.setStructureMode(StructureHeatCoolMode.AUTO);
+      this.updateFromStructure(structure);
+      this.platform.log.debug('Set Structure to Auto', value);
     }
   }
 
@@ -103,32 +93,31 @@ export class FlairRoomPlatformAccessory {
     if (this.room.active) {
       return;
     }
-    this.client.setRoomAway(this.room, false).then(() => {
+    this.client.update('rooms', this.room.id, {
+      away: false,
+    }).then(() => {
       this.platform.log.debug('Set Room to active');
     });
   }
 
 
-  setTargetTemperature(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
-    this.client.setRoomSetPoint(this.room, value as number).then((room: Room) => {
-      this.updateRoomReadingsFromRoom(room);
-      this.platform.log.debug('Set Characteristic Temperature -> ', value);
-      // you must call the callback function
-      callback(null);
+  async setTargetTemperature(value: CharacteristicValue): Promise<void> {
+    const room = await this.client.update('rooms', this.room.id, {
+      setPointC: value as number,
     });
-
+    this.updateRoomReadingsFromRoom(room);
+    this.platform.log.debug('Set Characteristic Temperature -> ', value);
   }
 
-  getTargetTemperature(callback: CharacteristicGetCallback): void {
-    this.getNewRoomReadings().then((room: Room) => {
-      callback(null, room.setPointC);
-    });
+  async getTargetTemperature(): Promise<CharacteristicValue> {
+    const room = await this.getNewRoomReadings();
+    return room.setPointC!;
   }
 
 
   async getNewRoomReadings(): Promise<Room> {
     try {
-      const room = await this.client.getRoom(this.room);
+      const room = await this.client.get('rooms', this.room.id) as Room;
       this.updateRoomReadingsFromRoom(room);
       return room;
     } catch (e) {

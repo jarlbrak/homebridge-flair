@@ -1,10 +1,4 @@
-import type {PlatformAccessory, Service} from 'homebridge';
-import {
-  CharacteristicEventTypes,
-  CharacteristicGetCallback,
-  CharacteristicSetCallback,
-  CharacteristicValue,
-} from 'homebridge';
+import type {PlatformAccessory, Service, CharacteristicValue} from 'homebridge';
 
 import {FlairPlatform} from './platform';
 import {Structure, StructureHeatCoolMode, Client} from 'flair-api-ts';
@@ -53,50 +47,40 @@ export class FlairStructurePlatformAccessory {
       );
 
     this.thermostatService.getCharacteristic(this.platform.Characteristic.TargetTemperature)
-      .on(CharacteristicEventTypes.SET, this.setTargetTemperature.bind(this))
-      .on(CharacteristicEventTypes.GET, this.getTargetTemperature.bind(this));
+      .onSet(this.setTargetTemperature.bind(this))
+      .onGet(this.getTargetTemperature.bind(this));
 
     this.thermostatService.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
-      .on(CharacteristicEventTypes.SET, this.setTargetHeatingCoolingState.bind(this));
+      .onSet(this.setTargetHeatingCoolingState.bind(this));
   }
 
-  setTargetHeatingCoolingState(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
+  async setTargetHeatingCoolingState(value: CharacteristicValue): Promise<void> {
     if (value === this.platform.Characteristic.TargetHeatingCoolingState.OFF) {
-      this.platform.setStructureMode(StructureHeatCoolMode.OFF).then((structure: Structure) => {
-        callback(null);
-        this.updateFromStructure(structure);
-      });
+      const structure = await this.platform.setStructureMode(StructureHeatCoolMode.OFF);
+      this.updateFromStructure(structure);
     } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.COOL) {
-      this.platform.setStructureMode(StructureHeatCoolMode.COOL).then((structure: Structure) => {
-        callback(null);
-        this.updateFromStructure(structure);
-      });
+      const structure = await this.platform.setStructureMode(StructureHeatCoolMode.COOL);
+      this.updateFromStructure(structure);
     } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.HEAT) {
-      this.platform.setStructureMode(StructureHeatCoolMode.HEAT).then((structure: Structure) => {
-        callback(null);
-        this.updateFromStructure(structure);
-      });
+      const structure = await this.platform.setStructureMode(StructureHeatCoolMode.HEAT);
+      this.updateFromStructure(structure);
     } else if (value === this.platform.Characteristic.TargetHeatingCoolingState.AUTO) {
-      this.platform.setStructureMode(StructureHeatCoolMode.AUTO).then((structure: Structure) => {
-        callback(null);
-        this.updateFromStructure(structure);
-      });
+      const structure = await this.platform.setStructureMode(StructureHeatCoolMode.AUTO);
+      this.updateFromStructure(structure);
     }
   }
 
-  setTargetTemperature(value: CharacteristicValue, callback: CharacteristicSetCallback): void {
-    this.client.setStructureSetPoint(this.structure, value as number).then((structure: Structure) => {
-      // you must call the callback function
-      callback(null);
-      this.updateFromStructure(structure);
-      this.platform.log.debug('Set Characteristic Temperature -> ', value);
-
+  async setTargetTemperature(value: CharacteristicValue): Promise<void> {
+    const structure = await this.client.update('structures', this.structure.id, {
+      setPointTemperatureC: value as number,
     });
+    this.updateFromStructure(structure);
+    this.platform.log.debug('Set Characteristic Temperature -> ', value);
 
   }
 
-  getTargetTemperature(callback: CharacteristicGetCallback): void {
-    callback(null, this.platform.structure ? this.platform.structure!.setPointTemperatureC : 0);
+  async getTargetTemperature(): Promise<CharacteristicValue> {
+    return this.platform.structure ? this.platform.structure!.setPointTemperatureC! : 0;
   }
 
   public updateFromStructure(structure: Structure): void {

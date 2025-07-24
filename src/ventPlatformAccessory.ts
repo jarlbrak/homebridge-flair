@@ -161,7 +161,9 @@ export class FlairVentPlatformAccessory {
      //  * These are sent when the user changes the state of an accessory, for example, changing the Brightness
      //  */
   async setTargetPosition(value: CharacteristicValue): Promise<void> {
-    const vent: Vent = await this.client.setVentPercentOpen(this.vent, value as number);
+    const vent: Vent = await this.client.update('vents', this.vent.id, {
+      percentOpen: value as number,
+    });
     this.updateVentReadingsFromVent(vent);
     this.platform.log.debug('Set Characteristic Percent Open -> ', value);
   }
@@ -173,7 +175,7 @@ export class FlairVentPlatformAccessory {
 
   async getNewVentReadings(): Promise<Vent> {
     try {
-      const vent = await this.client.getVentReading(this.vent);
+      const vent = await this.client.get('vents', this.vent.id) as Vent;
       this.updateVentReadingsFromVent(vent);
       return vent;
     } catch (e) {
